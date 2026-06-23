@@ -1,0 +1,43 @@
+<?php
+
+use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EmployeeController;
+use App\Http\Controllers\LeaveRequestController;
+use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\StatisticsController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Admin\AdminDashboardController;
+use App\Http\Controllers\Admin\AdminLeaveApprovalController;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/', function () {
+    return redirect()->route('login');
+});
+
+Route::middleware('auth')->group(function (): void {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/employees', [EmployeeController::class, 'index'])->name('employees.index');
+    Route::get('/workforce/today', [AttendanceController::class, 'today'])->name('workforce.today');
+    Route::put('/workforce/today/status', [AttendanceController::class, 'updateMyStatus'])->name('workforce.status.update');
+    Route::get('/statistics', [StatisticsController::class, 'index'])->name('statistics.index');
+    Route::resource('departments', DepartmentController::class)->except('show');
+    Route::resource('leave-requests', LeaveRequestController::class)->only(['index', 'create', 'store']);
+
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+Route::middleware(['auth', 'admin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function (): void {
+        Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+        Route::patch('/leave-requests/{leaveRequest}/approve', [AdminLeaveApprovalController::class, 'approve'])
+            ->name('leave-requests.approve');
+        Route::patch('/leave-requests/{leaveRequest}/reject', [AdminLeaveApprovalController::class, 'reject'])
+            ->name('leave-requests.reject');
+    });
+
+require __DIR__.'/auth.php';
